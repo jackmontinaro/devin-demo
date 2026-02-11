@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feature Flag Admin Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: #1e293b;
+            border-bottom: 1px solid #334155;
+            padding: 1.25rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header h1 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #f1f5f9;
+        }
+
+        .header .subtitle {
+            font-size: 0.8rem;
+            color: #94a3b8;
+        }
+
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+        }
+
+        .section {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 0.75rem;
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+        }
+
+        .section-header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid #334155;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .section-header h2 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #f1f5f9;
+        }
+
+        .badge {
+            background: #334155;
+            color: #94a3b8;
+            padding: 0.2rem 0.6rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+        }
+
+        .flag-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.85rem 1.25rem;
+            border-bottom: 1px solid #1e293b;
+            transition: background 0.15s;
+        }
+
+        .flag-row:hover { background: #253347; }
+        .flag-row:last-child { border-bottom: none; }
+
+        .flag-info { flex: 1; }
+
+        .flag-name {
+            font-weight: 500;
+            font-size: 0.9rem;
+            color: #e2e8f0;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+        }
+
+        .flag-desc {
+            font-size: 0.78rem;
+            color: #64748b;
+            margin-top: 0.2rem;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.2rem 0.55rem;
+            border-radius: 999px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            margin-right: 0.75rem;
+        }
+
+        .status-active { background: #064e3b; color: #34d399; }
+        .status-removing { background: #78350f; color: #fbbf24; }
+        .status-removed { background: #334155; color: #94a3b8; }
+
+        .btn {
+            padding: 0.45rem 0.9rem;
+            border: none;
+            border-radius: 0.4rem;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .btn-danger {
+            background: #991b1b;
+            color: #fca5a5;
+        }
+
+        .btn-danger:hover { background: #b91c1c; }
+
+        .btn-danger:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: #1d4ed8;
+            color: #dbeafe;
+        }
+
+        .btn-primary:hover { background: #2563eb; }
+
+        .btn-sm {
+            padding: 0.3rem 0.6rem;
+            font-size: 0.75rem;
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: #ef4444;
+            border: 1px solid #334155;
+        }
+
+        .btn-ghost:hover { background: #1e293b; }
+
+        .add-form {
+            display: flex;
+            gap: 0.5rem;
+            padding: 0.85rem 1.25rem;
+            background: #162032;
+            border-top: 1px solid #334155;
+        }
+
+        .add-form input {
+            flex: 1;
+            padding: 0.45rem 0.75rem;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 0.4rem;
+            color: #e2e8f0;
+            font-size: 0.8rem;
+            outline: none;
+        }
+
+        .add-form input:focus { border-color: #3b82f6; }
+
+        .history-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem 1.25rem;
+            border-bottom: 1px solid #1e293b;
+            font-size: 0.82rem;
+        }
+
+        .history-row:last-child { border-bottom: none; }
+
+        .history-info { flex: 1; }
+
+        .history-flag {
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            color: #e2e8f0;
+            font-weight: 500;
+        }
+
+        .history-time {
+            color: #475569;
+            font-size: 0.72rem;
+            margin-top: 0.15rem;
+        }
+
+        .history-status {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .history-status.triggered { color: #3b82f6; }
+        .history-status.error { color: #ef4444; }
+
+        .history-link {
+            color: #3b82f6;
+            text-decoration: none;
+            font-size: 0.78rem;
+            margin-left: 0.75rem;
+        }
+
+        .history-link:hover { text-decoration: underline; }
+
+        .empty-state {
+            padding: 2rem;
+            text-align: center;
+            color: #475569;
+            font-size: 0.85rem;
+        }
+
+        .actions-cell {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            padding: 0.75rem 1.25rem;
+            border-radius: 0.5rem;
+            font-size: 0.82rem;
+            font-weight: 500;
+            z-index: 100;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .toast.success { background: #064e3b; color: #34d399; border: 1px solid #065f46; }
+        .toast.error { background: #7f1d1d; color: #fca5a5; border: 1px solid #991b1b; }
+        .toast.info { background: #1e3a5f; color: #93c5fd; border: 1px solid #1e40af; }
+
+        .spinner {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid #475569;
+            border-top-color: #e2e8f0;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            margin-right: 0.4rem;
+            vertical-align: middle;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .config-bar {
+            background: #162032;
+            border: 1px solid #334155;
+            border-radius: 0.5rem;
+            padding: 0.6rem 1rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.78rem;
+            color: #64748b;
+        }
+
+        .config-bar code {
+            color: #94a3b8;
+            background: #0f172a;
+            padding: 0.15rem 0.4rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+        }
+
+        .config-status {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .dot-green { background: #34d399; }
+        .dot-red { background: #ef4444; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div>
+            <h1>Feature Flag Admin</h1>
+            <div class="subtitle">Trigger Devin workflows to remove feature flags</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="config-bar">
+            <span>Target repo: <code id="target-repo">loading...</code></span>
+            <div class="config-status">
+                <span class="dot" id="api-dot"></span>
+                <span id="api-status">Checking API...</span>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">
+                <h2>Feature Flags</h2>
+                <span class="badge" id="flag-count">0</span>
+            </div>
+            <div id="flags-list">
+                <div class="empty-state">Loading...</div>
+            </div>
+            <div class="add-form">
+                <input type="text" id="new-flag-name" placeholder="Flag name (e.g. enable_dark_mode)">
+                <input type="text" id="new-flag-desc" placeholder="Description (optional)">
+                <button class="btn btn-primary btn-sm" onclick="addFlag()">Add Flag</button>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">
+                <h2>Workflow History</h2>
+                <span class="badge" id="history-count">0</span>
+            </div>
+            <div id="history-list">
+                <div class="empty-state">No workflows triggered yet</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        async function loadFlags() {
+            const resp = await fetch('/api/flags');
+            const flags = await resp.json();
+            const container = document.getElementById('flags-list');
+            document.getElementById('flag-count').textContent = flags.length;
+
+            if (flags.length === 0) {
+                container.innerHTML = '<div class="empty-state">No feature flags configured. Add one below.</div>';
+                return;
+            }
+
+            container.innerHTML = flags.map(flag => `
+                <div class="flag-row" id="flag-${flag.id}">
+                    <div class="flag-info">
+                        <div class="flag-name">${escapeHtml(flag.name)}</div>
+                        <div class="flag-desc">${escapeHtml(flag.description)}</div>
+                    </div>
+                    <div class="actions-cell">
+                        <span class="status-badge status-${flag.status}">${flag.status}</span>
+                        <button class="btn btn-danger btn-sm" onclick="triggerRemoval('${flag.id}')"
+                            ${flag.status !== 'active' ? 'disabled' : ''}>
+                            Remove Flag
+                        </button>
+                        <button class="btn btn-ghost btn-sm" onclick="deleteFlag('${flag.id}')">Delete</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function loadHistory() {
+            const resp = await fetch('/api/history');
+            const history = await resp.json();
+            const container = document.getElementById('history-list');
+            document.getElementById('history-count').textContent = history.length;
+
+            if (history.length === 0) {
+                container.innerHTML = '<div class="empty-state">No workflows triggered yet</div>';
+                return;
+            }
+
+            container.innerHTML = history.map(entry => `
+                <div class="history-row">
+                    <div class="history-info">
+                        <div class="history-flag">${escapeHtml(entry.flag_name)}</div>
+                        <div class="history-time">${new Date(entry.triggered_at).toLocaleString()}</div>
+                    </div>
+                    <span class="history-status ${entry.status}">${entry.status}</span>
+                    ${entry.session_url ? `<a class="history-link" href="${entry.session_url}" target="_blank">View Session</a>` : ''}
+                </div>
+            `).join('');
+        }
+
+        async function triggerRemoval(flagId) {
+            const btn = event.target;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span>Triggering...';
+
+            try {
+                const resp = await fetch('/api/trigger-removal', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ flag_id: flagId }),
+                });
+                const result = await resp.json();
+
+                if (resp.ok) {
+                    showToast('Devin workflow triggered', 'success');
+                } else {
+                    showToast(result.message || 'Failed to trigger workflow', 'error');
+                }
+            } catch (err) {
+                showToast('Network error: ' + err.message, 'error');
+            }
+
+            await loadFlags();
+            await loadHistory();
+        }
+
+        async function addFlag() {
+            const nameInput = document.getElementById('new-flag-name');
+            const descInput = document.getElementById('new-flag-desc');
+            const name = nameInput.value.trim();
+            const description = descInput.value.trim();
+
+            if (!name) {
+                showToast('Flag name is required', 'error');
+                return;
+            }
+
+            const resp = await fetch('/api/flags', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, description }),
+            });
+
+            if (resp.ok) {
+                nameInput.value = '';
+                descInput.value = '';
+                showToast('Flag added', 'success');
+                await loadFlags();
+            } else {
+                showToast('Failed to add flag', 'error');
+            }
+        }
+
+        async function deleteFlag(flagId) {
+            const resp = await fetch(`/api/flags/${flagId}`, { method: 'DELETE' });
+            if (resp.ok) {
+                showToast('Flag deleted', 'info');
+                await loadFlags();
+            }
+        }
+
+        function showToast(message, type) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast ${type} show`;
+            setTimeout(() => { toast.className = 'toast'; }, 3000);
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str || '';
+            return div.innerHTML;
+        }
+
+        async function checkApiStatus() {
+            const dot = document.getElementById('api-dot');
+            const status = document.getElementById('api-status');
+            const resp = await fetch('/api/flags');
+            if (resp.ok) {
+                dot.className = 'dot dot-green';
+                status.textContent = 'API Connected';
+            } else {
+                dot.className = 'dot dot-red';
+                status.textContent = 'API Error';
+            }
+        }
+
+        document.getElementById('target-repo').textContent = 'jackmontinaro/dotw-copy1';
+
+        loadFlags();
+        loadHistory();
+        checkApiStatus();
+    </script>
+</body>
+</html>
